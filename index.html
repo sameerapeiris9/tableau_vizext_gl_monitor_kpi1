@@ -454,7 +454,10 @@ function render(rows,enc){
   }
   function dvNum(row,k){
     if(!k||!row[k]) return null;
-    var n=parseFloat(row[k].nativeValue!==undefined?row[k].nativeValue:row[k].value);
+    var dv=row[k];
+    /* use nativeValue if defined (even if 0), otherwise value */
+    var raw=dv.nativeValue!==undefined&&dv.nativeValue!==null?dv.nativeValue:dv.value;
+    var n=parseFloat(raw);
     return isNaN(n)?null:n;
   }
 
@@ -474,13 +477,41 @@ function render(rows,enc){
      This comes from a SINGLE row (selected/latest day).
      We take the first non-null value found in ANY row.
   ══════════════════════════════════════════ */
+  /* ══════════════════════════════════════════
+     DISPLAY AMOUNT — completely independent read
+     Strategy: SUM all values for this key across all rows.
+     This handles:
+     - Single row worksheet (one day selected) → that row's value
+     - Multi-row worksheet (display is same on every row) → any row's value
+     - Display measure summed across rows = total for selected period
+     We take the MAX absolute value (most meaningful single-day figure).
+  ══════════════════════════════════════════ */
   var displayVal=null;
   if(displayKey){
-    /* take the LAST row's value (most recent selected day) */
-    for(var ri=rows.length-1;ri>=0;ri--){
-      var v=dvNum(rows[ri],displayKey);
-      if(v!==null){displayVal=v;break;}
+    var dispVals=[];
+    rows.forEach(function(row){
+      if(!row[displayKey]) return;
+      var dv=row[displayKey];
+      /* read nativeValue first, then value — never skip 0 */
+      var raw=dv.nativeValue!==undefined&&dv.nativeValue!==null?dv.nativeValue:dv.value;
+      var n=parseFloat(raw);
+      if(!isNaN(n)) dispVals.push(n);
+    });
+    console.log('Display values found:', dispVals.length, dispVals.slice(0,5));
+    if(dispVals.length===1){
+      /* single row → use it directly */
+      displayVal=dispVals[0];
+    } else if(dispVals.length>1){
+      /* check if all same (measure repeated across date rows) → use first */
+      var allSame=dispVals.every(function(v){return v===dispVals[0];});
+      if(allSame){
+        displayVal=dispVals[0];
+      } else {
+        /* different values → use the last (most recent date) */
+        displayVal=dispVals[dispVals.length-1];
+      }
     }
+    console.log('Display final value:', displayVal);
   }
 
   /* ══════════════════════════════════════════
@@ -516,10 +547,11 @@ function render(rows,enc){
      If displayKey is set → use displayVal
      Otherwise → use last point in trend series
   ══════════════════════════════════════════ */
-  var heroVal = displayVal!==null ? displayVal
-              : trendVals.length  ? trendVals[trendVals.length-1]
+  /* displayVal===null means not mapped; displayVal===0 is valid */
+  var heroVal = (displayVal!==null) ? displayVal
+              : trendVals.length    ? trendVals[trendVals.length-1]
               : null;
-  if(heroVal===null) return;
+  if(heroVal===null) return; /* truly no data */
 
   $('amount').textContent=fmt(heroVal);
 
