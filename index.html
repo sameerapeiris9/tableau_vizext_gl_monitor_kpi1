@@ -38,7 +38,7 @@ html,body{
 
 #app{
   width:calc(100% - 12px);
-  max-width:280px;
+  max-width:168px;
 }
 
 /* ════════════════════════════════
@@ -46,7 +46,7 @@ html,body{
 ════════════════════════════════ */
 #card{
   background:var(--card);
-  border-radius:16px;
+  border-radius:10px;
   border:1px solid var(--bdr);
   overflow:hidden;
   position:relative;
@@ -65,16 +65,16 @@ html,body{
 
 /* accent stripe — colour set by JS based on trend */
 #stripe{
-  height:3px;width:100%;
+  height:2px;width:100%;
   background:var(--g);
   transition:background .3s ease;
 }
 
-.body{padding:15px 15px 13px;}
+.body{padding:9px 9px 8px;}
 
 /* ── HEADER ── */
 #card-hdr{
-  font-size:9px;font-weight:700;
+  font-size:6px;font-weight:700;
   letter-spacing:.1em;text-transform:uppercase;
   color:var(--t4);
   margin-bottom:0;
@@ -95,7 +95,7 @@ html,body{
     opacity .25s ease,
     transform .25s var(--ease),
     margin .3s var(--ease);
-  margin-top:9px;
+  margin-top:5px;
   margin-bottom:0;
 }
 #card:hover #amt-block{
@@ -107,7 +107,7 @@ html,body{
 }
 
 #amount{
-  font-size:30px;font-weight:700;color:var(--t1);
+  font-size:18px;font-weight:700;color:var(--t1);
   letter-spacing:-.03em;line-height:1;
   margin-bottom:6px;
   font-variant-numeric:tabular-nums;
@@ -118,13 +118,13 @@ html,body{
   display:flex;align-items:center;gap:8px;flex-wrap:wrap;
 }
 #avg-lbl{
-  font-size:10px;font-weight:500;color:var(--t3);
+  font-size:6px;font-weight:500;color:var(--t3);
   white-space:nowrap;
 }
 #delta-chip{
   display:inline-flex;align-items:center;gap:3px;
-  font-size:10px;font-weight:700;
-  padding:2px 8px;border-radius:99px;
+  font-size:6px;font-weight:700;
+  padding:1px 5px;border-radius:99px;
   white-space:nowrap;
   transition:background .25s,color .25s;
 }
@@ -135,7 +135,7 @@ html,body{
 /* ── DIVIDER — hides on hover ── */
 #divider{
   height:0.5px;background:var(--bdr);
-  margin:11px 0 9px;
+  margin:7px 0 5px;
   transition:margin .3s var(--ease),opacity .2s,max-height .3s var(--ease);
   max-height:1px;opacity:1;overflow:hidden;
 }
@@ -146,13 +146,13 @@ html,body{
 /* ── CHART WRAP ── */
 #chart-wrap{
   position:relative;
-  height:72px;
+  height:44px;
   transition:height .38s var(--ease),margin .3s var(--ease);
   /* small margin top when amount visible */
   margin-top:0;
 }
 #card:hover #chart-wrap{
-  height:110px;
+  height:66px;
   /* push chart up to fill space left by hiding amount */
   margin-top:8px;
 }
@@ -171,20 +171,20 @@ html,body{
 }
 #card:hover #x-labels{opacity:1;}
 #x-labels span{
-  font-size:8px;font-weight:500;color:var(--t5);
+  font-size:5px;font-weight:500;color:var(--t5);
   white-space:nowrap;
 }
 
 /* ── TOOLTIP OVERLAY — latest value in chart ── */
 #chart-tooltip{
   position:absolute;top:6px;right:0;
-  font-size:9.5px;font-weight:700;
+  font-size:6px;font-weight:700;
   color:var(--t2);
   opacity:0;
   transition:opacity .2s;
   pointer-events:none;
   background:rgba(255,255,255,.9);
-  padding:2px 7px;border-radius:6px;
+  padding:1px 4px;border-radius:4px;
   border:0.5px solid var(--bdr);
 }
 #card:hover #chart-tooltip{opacity:1;}
@@ -276,9 +276,9 @@ function fmt(n){return fmtSmart(n);}
    RESPONSIVE
 ════════════════════════════════ */
 function applyScale(w){
-  var fs=Math.min(14,Math.max(10,Math.round((w/280)*13)));
+  var fs=Math.min(9,Math.max(6,Math.round((w/168)*8)));
   appEl.style.fontSize=fs+'px';
-  var amtFs=Math.min(32,Math.max(18,Math.round((w/280)*30)));
+  var amtFs=Math.min(20,Math.max(11,Math.round((w/168)*18)));
   $('amount').style.fontSize=amtFs+'px';
 }
 if(window.ResizeObserver){
