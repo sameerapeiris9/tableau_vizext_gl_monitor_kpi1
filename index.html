@@ -473,45 +473,23 @@ function render(rows,enc){
   $('card-hdr').textContent=(headerText||'KPI Metric').toUpperCase();
 
   /* ══════════════════════════════════════════
-     DISPLAY AMOUNT — from the displayKey
-     This comes from a SINGLE row (selected/latest day).
-     We take the first non-null value found in ANY row.
-  ══════════════════════════════════════════ */
-  /* ══════════════════════════════════════════
-     DISPLAY AMOUNT — completely independent read
-     Strategy: SUM all values for this key across all rows.
-     This handles:
-     - Single row worksheet (one day selected) → that row's value
-     - Multi-row worksheet (display is same on every row) → any row's value
-     - Display measure summed across rows = total for selected period
-     We take the MAX absolute value (most meaningful single-day figure).
+     DISPLAY AMOUNT — SUM all rows, fully independent of date.
+     Every row contributes its nativeValue to the sum.
+     This is correct whether the worksheet has 1 row or 100 rows.
   ══════════════════════════════════════════ */
   var displayVal=null;
   if(displayKey){
-    var dispVals=[];
+    var _sum=0, _cnt=0;
     rows.forEach(function(row){
       if(!row[displayKey]) return;
       var dv=row[displayKey];
-      /* read nativeValue first, then value — never skip 0 */
-      var raw=dv.nativeValue!==undefined&&dv.nativeValue!==null?dv.nativeValue:dv.value;
+      var raw=dv.nativeValue!==undefined&&dv.nativeValue!==null
+              ? dv.nativeValue : dv.value;
       var n=parseFloat(raw);
-      if(!isNaN(n)) dispVals.push(n);
+      if(!isNaN(n)){ _sum+=n; _cnt++; }
     });
-    console.log('Display values found:', dispVals.length, dispVals.slice(0,5));
-    if(dispVals.length===1){
-      /* single row → use it directly */
-      displayVal=dispVals[0];
-    } else if(dispVals.length>1){
-      /* check if all same (measure repeated across date rows) → use first */
-      var allSame=dispVals.every(function(v){return v===dispVals[0];});
-      if(allSame){
-        displayVal=dispVals[0];
-      } else {
-        /* different values → use the last (most recent date) */
-        displayVal=dispVals[dispVals.length-1];
-      }
-    }
-    console.log('Display final value:', displayVal);
+    console.log('[KPI] display key:',displayKey,'rows summed:',_cnt,'total:',_sum);
+    if(_cnt>0) displayVal=_sum;
   }
 
   /* ══════════════════════════════════════════
