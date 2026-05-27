@@ -422,7 +422,6 @@ function formatLabel(dv){
    RENDER
 ════════════════════════════════ */
 function render(rows,enc){
-  /* find keys */
   if(!rows.length) return;
   var rowKeys=Object.keys(rows[0]);
 
@@ -432,21 +431,21 @@ function render(rows,enc){
     for(var i=0;i<rowKeys.length;i++) if(rowKeys[i].toLowerCase()===nm) return rowKeys[i];
     return null;
   }
-
-  var hdrKey   =findKey(enc.header);
-  var amountKey=findKey(enc.amount);
-  var dateKey  =findKey(enc.date);
-
-  /* if no date key, try to auto-detect */
-  if(!dateKey){
-    rowKeys.forEach(function(k){
-      if(dateKey) return;
-      var kl=k.toLowerCase();
-      if(kl.indexOf('date')>=0||kl.indexOf('month')>=0||kl.indexOf('day')>=0||kl.indexOf('year')>=0||kl.indexOf('period')>=0){
-        dateKey=k;
+  /* auto-detect date key if not mapped */
+  function autoDateKey(){
+    var candidates=['date','month','day','year','period','posting'];
+    for(var ci=0;ci<candidates.length;ci++){
+      for(var ki=0;ki<rowKeys.length;ki++){
+        if(rowKeys[ki].toLowerCase().indexOf(candidates[ci])>=0) return rowKeys[ki];
       }
-    });
+    }
+    return null;
   }
+
+  var hdrKey     = findKey(enc.header);
+  var displayKey = findKey(enc.display);   /* hero number — single selected day */
+  var trendKey   = findKey(enc.trend);     /* time-series for chart */
+  var dateKey    = findKey(enc.date) || autoDateKey();
 
   function dvStr(row,k){
     if(!k||!row[k]) return null;
@@ -459,73 +458,109 @@ function render(rows,enc){
     return isNaN(n)?null:n;
   }
 
-  /* ── header: use first row's value ── */
+  /* ── header ── */
   var headerText=dvStr(rows[0],hdrKey);
-  if(!headerText&&enc.amount) headerText=enc.amount.name.replace(/^(SUM|AVG|MAX|MIN)\((.+)\)$/i,'$2').trim();
+  if(!headerText){
+    var srcKey=displayKey||trendKey;
+    if(srcKey&&enc[srcKey==='display'?'display':'trend']){
+      var fn=enc[displayKey?'display':'trend'];
+      headerText=fn?fn.name.replace(/^(SUM|AVG|MAX|MIN)\((.+)\)$/i,'$2').trim():null;
+    }
+  }
   $('card-hdr').textContent=(headerText||'KPI Metric').toUpperCase();
 
-  /* ── collect time series ── */
+  /* ══════════════════════════════════════════
+     DISPLAY AMOUNT — from the displayKey
+     This comes from a SINGLE row (selected/latest day).
+     We take the first non-null value found in ANY row.
+  ══════════════════════════════════════════ */
+  var displayVal=null;
+  if(displayKey){
+    /* take the LAST row's value (most recent selected day) */
+    for(var ri=rows.length-1;ri>=0;ri--){
+      var v=dvNum(rows[ri],displayKey);
+      if(v!==null){displayVal=v;break;}
+    }
+  }
+
+  /* ══════════════════════════════════════════
+     TREND SERIES — from trendKey + dateKey
+     Collects all rows into a time series.
+  ══════════════════════════════════════════ */
+  var tKey=trendKey||displayKey; /* fallback: use display as trend if no trend field */
   var pts=[];
   rows.forEach(function(row){
-    var val=dvNum(row,amountKey);
+    var val=dvNum(row,tKey);
     if(val===null) return;
     var lbl=dateKey?formatLabel(row[dateKey]):'';
     var dateObj=dateKey?parseDate(row[dateKey]):null;
     pts.push({val:val,lbl:lbl,date:dateObj});
   });
 
-  /* sort by date if available */
+  /* sort chronologically */
   if(pts.length&&pts[0].date){
     pts.sort(function(a,b){return (a.date?a.date.getTime():0)-(b.date?b.date.getTime():0);});
   }
-
   /* deduplicate by label */
-  var seen={}, unique=[];
-  pts.forEach(function(p){
-    if(!seen[p.lbl]){seen[p.lbl]=true;unique.push(p);}
-  });
+  var seen={},unique=[];
+  pts.forEach(function(p){if(!seen[p.lbl]){seen[p.lbl]=true;unique.push(p);}});
   pts=unique;
 
-  if(!pts.length) return;
+  if(!pts.length&&displayVal===null) return;
 
-  var vals=pts.map(function(p){return p.val;});
+  var trendVals=pts.map(function(p){return p.val;});
   var labels=pts.map(function(p){return p.lbl;});
 
-  /* ── latest value ── */
-  var latest=vals[vals.length-1];
-  $('amount').textContent=fmt(latest);
+  /* ══════════════════════════════════════════
+     HERO AMOUNT
+     If displayKey is set → use displayVal
+     Otherwise → use last point in trend series
+  ══════════════════════════════════════════ */
+  var heroVal = displayVal!==null ? displayVal
+              : trendVals.length  ? trendVals[trendVals.length-1]
+              : null;
+  if(heroVal===null) return;
 
-  /* ── average ── */
-  var avg=vals.reduce(function(s,v){return s+v;},0)/vals.length;
-  $('avg-lbl').textContent='Avg '+fmt(avg);
+  $('amount').textContent=fmt(heroVal);
 
-  /* ── variance vs average ── */
-  var deltaVsAvg=avg!==0?((latest-avg)/Math.abs(avg))*100:null;
-  var chip=$('delta-chip');
-  if(deltaVsAvg!==null){
-    var up=deltaVsAvg>=0;
-    chip.className='neu'; /* reset */
-    chip.className=up?'up':'dn';
-    chip.textContent=(up?'▲ ':' ▼ ')+(deltaVsAvg>=0?'+':'')+deltaVsAvg.toFixed(1)+'% vs avg';
-  } else {
-    chip.className='neu';chip.textContent='—';
-  }
+  /* ══════════════════════════════════════════
+     AVERAGE + VARIANCE (from trend series)
+  ══════════════════════════════════════════ */
+  if(trendVals.length){
+    var avg=trendVals.reduce(function(s,v){return s+v;},0)/trendVals.length;
+    $('avg-lbl').textContent='Avg '+fmt(avg);
 
-  /* ── chart ── */
-  buildChart(labels,vals);
-
-  /* ── x-axis labels: first + last ── */
-  var xlEl=$('x-labels');
-  xlEl.innerHTML='';
-  if(labels.length){
-    var s1=document.createElement('span');s1.textContent=labels[0];xlEl.appendChild(s1);
-    if(labels.length>1){
-      var s2=document.createElement('span');s2.textContent=labels[labels.length-1];xlEl.appendChild(s2);
+    /* variance = hero vs average of trend */
+    var deltaVsAvg=avg!==0?((heroVal-avg)/Math.abs(avg))*100:null;
+    var chip=$('delta-chip');
+    if(deltaVsAvg!==null){
+      var up=deltaVsAvg>=0;
+      chip.className=up?'up':'dn';
+      chip.textContent=(up?'▲ ':' ▼ ')+(deltaVsAvg>=0?'+':'')+Math.abs(deltaVsAvg).toFixed(1)+'% vs avg';
+    } else {
+      chip.className='neu';chip.textContent='—';
     }
+  } else {
+    /* no trend series — show blank meta */
+    $('avg-lbl').textContent='';
+    $('delta-chip').className='neu';$('delta-chip').textContent='';
   }
 
-  /* ── chart tooltip: latest label + value ── */
-  $('chart-tooltip').textContent=fmt(latest);
+  /* ── chart (uses trend series) ── */
+  if(trendVals.length){
+    buildChart(labels,trendVals);
+
+    /* x-axis labels */
+    var xlEl=$('x-labels');
+    xlEl.innerHTML='';
+    var s1=document.createElement('span');s1.textContent=labels[0]||'';xlEl.appendChild(s1);
+    if(labels.length>1){
+      var s2=document.createElement('span');s2.textContent=labels[labels.length-1]||'';xlEl.appendChild(s2);
+    }
+
+    /* chart tooltip — show hero value */
+    $('chart-tooltip').textContent=fmt(heroVal);
+  }
 
   applyScale(appEl.offsetWidth||280);
 }
