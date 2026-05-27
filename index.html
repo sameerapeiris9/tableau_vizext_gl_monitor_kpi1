@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>KPI Chart Card</title>
+<script src="https://cdn.jsdelivr.net/gh/tableau/extensions-api/lib/tableau.extensions.1.latest.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:     #f0f2f5;   /* dashboard background — warm neutral */
+  --card:   #ffffff;
+  --bdr:    rgba(0,0,0,.07);
+  --surf:   #f8fafc;
+  --t1:     #0f172a;
+  --t2:     #334155;
+  --t3:     #64748b;
+  --t4:     #94a3b8;
+  --t5:     #cbd5e1;
+  --g:      #16a34a;  --gb:#dcfce7; --gd:#15803d;
+  --r:      #dc2626;  --rb:#fee2e2; --rd:#b91c1c;
+  --b:      #3b82f6;  --bb:#eff6ff;
+  --ease:   cubic-bezier(.22,.68,0,1.1);
+  --font:   'Inter',-apple-system,sans-serif;
+}
+
+html,body{
+  width:100%;height:100%;
+  background:var(--bg);
+  font-family:var(--font);
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+#app{
+  width:calc(100% - 12px);
+  max-width:280px;
+}
+
+/* ════════════════════════════════
+   CARD
+════════════════════════════════ */
+#card{
+  background:var(--card);
+  border-radius:16px;
+  border:1px solid var(--bdr);
+  overflow:hidden;
+  position:relative;
+  box-shadow:
+    0 1px 3px rgba(0,0,0,.04),
+    0 6px 18px rgba(0,0,0,.07);
+  transition:box-shadow .25s var(--ease), transform .2s var(--ease);
+  cursor:default;
+}
+#card:hover{
+  box-shadow:
+    0 4px 12px rgba(0,0,0,.07),
+    0 18px 44px rgba(0,0,0,.1);
+  transform:translateY(-2px);
+}
+
+/* accent stripe — colour set by JS based on trend */
+#stripe{
+  height:3px;width:100%;
+  background:var(--g);
+  transition:background .3s ease;
+}
+
+.body{padding:15px 15px 13px;}
+
+/* ── HEADER ── */
+#card-hdr{
+  font-size:9px;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;
+  color:var(--t4);
+  margin-bottom:0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  /* always visible — header stays visible on hover */
+  transition:color .2s;
+}
+#card:hover #card-hdr{color:var(--t3);}
+
+/* ── AMOUNT BLOCK — hides on hover ── */
+#amt-block{
+  overflow:hidden;
+  max-height:100px;
+  opacity:1;
+  transform:translateY(0);
+  transition:
+    max-height .35s var(--ease),
+    opacity .25s ease,
+    transform .25s var(--ease),
+    margin .3s var(--ease);
+  margin-top:9px;
+  margin-bottom:0;
+}
+#card:hover #amt-block{
+  max-height:0;
+  opacity:0;
+  transform:translateY(-6px);
+  margin-top:0;
+  margin-bottom:0;
+}
+
+#amount{
+  font-size:30px;font-weight:700;color:var(--t1);
+  letter-spacing:-.03em;line-height:1;
+  margin-bottom:6px;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+}
+
+.meta-row{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+}
+#avg-lbl{
+  font-size:10px;font-weight:500;color:var(--t3);
+  white-space:nowrap;
+}
+#delta-chip{
+  display:inline-flex;align-items:center;gap:3px;
+  font-size:10px;font-weight:700;
+  padding:2px 8px;border-radius:99px;
+  white-space:nowrap;
+  transition:background .25s,color .25s;
+}
+#delta-chip.up{color:var(--gd);background:var(--gb);}
+#delta-chip.dn{color:var(--rd);background:var(--rb);}
+#delta-chip.neu{color:var(--t3);background:var(--surf);}
+
+/* ── DIVIDER — hides on hover ── */
+#divider{
+  height:0.5px;background:var(--bdr);
+  margin:11px 0 9px;
+  transition:margin .3s var(--ease),opacity .2s,max-height .3s var(--ease);
+  max-height:1px;opacity:1;overflow:hidden;
+}
+#card:hover #divider{
+  opacity:0;margin:0;max-height:0;
+}
+
+/* ── CHART WRAP ── */
+#chart-wrap{
+  position:relative;
+  height:72px;
+  transition:height .38s var(--ease),margin .3s var(--ease);
+  /* small margin top when amount visible */
+  margin-top:0;
+}
+#card:hover #chart-wrap{
+  height:110px;
+  /* push chart up to fill space left by hiding amount */
+  margin-top:8px;
+}
+#chart-canvas{
+  width:100%!important;height:100%!important;
+  display:block;
+}
+
+/* ── CHART X-AXIS LABELS — only on hover ── */
+#x-labels{
+  display:flex;justify-content:space-between;
+  padding:4px 0 0;
+  opacity:0;
+  transition:opacity .25s ease .1s;
+  pointer-events:none;
+}
+#card:hover #x-labels{opacity:1;}
+#x-labels span{
+  font-size:8px;font-weight:500;color:var(--t5);
+  white-space:nowrap;
+}
+
+/* ── TOOLTIP OVERLAY — latest value in chart ── */
+#chart-tooltip{
+  position:absolute;top:6px;right:0;
+  font-size:9.5px;font-weight:700;
+  color:var(--t2);
+  opacity:0;
+  transition:opacity .2s;
+  pointer-events:none;
+  background:rgba(255,255,255,.9);
+  padding:2px 7px;border-radius:6px;
+  border:0.5px solid var(--bdr);
+}
+#card:hover #chart-tooltip{opacity:1;}
+
+/* ════════════════════════════════
+   LOADING STATE
+════════════════════════════════ */
+.skel{
+  background:linear-gradient(90deg,#f0f2f5 25%,#e8eaed 50%,#f0f2f5 75%);
+  background-size:200% 100%;
+  animation:shimmer 1.4s infinite;
+  border-radius:6px;
+}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="card">
+    <div id="stripe"></div>
+    <div class="body">
+      <div id="card-hdr">KPI Metric</div>
+
+      <div id="amt-block">
+        <div id="amount">—</div>
+        <div class="meta-row">
+          <span id="avg-lbl">Avg —</span>
+          <span id="delta-chip" class="neu">— —</span>
+        </div>
+      </div>
+
+      <div id="divider"></div>
+
+      <div id="chart-wrap" style="position:relative">
+        <canvas id="chart-canvas"></canvas>
+        <div id="chart-tooltip"></div>
+      </div>
+      <div id="x-labels"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+(function(){
+
+var $=function(id){return document.getElementById(id);};
+var appEl=$('app');
+var chartObj=null;
+
+/* ════════════════════════════════
+   NUMBER FORMATTING — smart units, comma-separated
+════════════════════════════════ */
+function fmtSmart(n){
+  if(n===null||isNaN(n)) return '—';
+  var abs=Math.abs(n), s=n<0?'-':'';
+  /* Billions */
+  if(abs>=1e9){
+    var b=abs/1e9;
+    return s+(b>=100?Math.round(b).toLocaleString('en-US'):b%1===0?b.toLocaleString('en-US'):parseFloat(b.toFixed(2)).toLocaleString('en-US'))+' Bn';
+  }
+  /* Millions */
+  if(abs>=1e6){
+    var m=abs/1e6;
+    return s+(m>=100?Math.round(m).toLocaleString('en-US'):m%1===0?m.toLocaleString('en-US'):parseFloat(m.toFixed(2)).toLocaleString('en-US'))+' Mn';
+  }
+  /* Thousands */
+  if(abs>=1e3){
+    var k=abs/1e3;
+    return s+(k>=100?Math.round(k).toLocaleString('en-US'):parseFloat(k.toFixed(1)).toLocaleString('en-US'))+' K';
+  }
+  /* Small values — could be percentages or ratios */
+  if(abs<100){
+    return s+parseFloat(abs.toFixed(2)).toLocaleString('en-US');
+  }
+  return s+Math.round(abs).toLocaleString('en-US');
+}
+
+/* comma-separated no decimals for large integers */
+function fmtComma(n){
+  if(n===null||isNaN(n)) return '—';
+  return Math.round(Math.abs(n)).toLocaleString('en-US')*(n<0?-1:1);
+}
+
+/* pick format: use smart units for large numbers */
+function fmt(n){return fmtSmart(n);}
+
+/* ════════════════════════════════
+   RESPONSIVE
+════════════════════════════════ */
+function applyScale(w){
+  var fs=Math.min(14,Math.max(10,Math.round((w/280)*13)));
+  appEl.style.fontSize=fs+'px';
+  var amtFs=Math.min(32,Math.max(18,Math.round((w/280)*30)));
+  $('amount').style.fontSize=amtFs+'px';
+}
+if(window.ResizeObserver){
+  new ResizeObserver(function(e){applyScale(e[0].contentRect.width);}).observe(appEl);
+}
+window.addEventListener('resize',function(){applyScale(appEl.offsetWidth||280);});
+
+/* ════════════════════════════════
+   CHART
+════════════════════════════════ */
+function makeGradient(ctx,color){
+  var g=ctx.createLinearGradient(0,0,0,110);
+  g.addColorStop(0,color+'40');
+  g.addColorStop(1,color+'00');
+  return g;
+}
+
+function getChartColor(vals){
+  if(!vals.length) return '#16a34a';
+  var first=vals[0], last=vals[vals.length-1];
+  if(last>first) return '#16a34a';
+  if(last<first) return '#dc2626';
+  return '#3b82f6';
+}
+
+function buildChart(labels,values){
+  var color=getChartColor(values);
+  /* update stripe */
+  $('stripe').style.background=color;
+
+  var ctx=$('chart-canvas').getContext('2d');
+  var grad=makeGradient(ctx,color);
+
+  if(chartObj){
+    chartObj.data.labels=labels;
+    chartObj.data.datasets[0].data=values;
+    chartObj.data.datasets[0].borderColor=color;
+    chartObj.data.datasets[0].backgroundColor=grad;
+    chartObj.update('active');
+    return;
+  }
+
+  chartObj=new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:labels,
+      datasets:[{
+        data:values,
+        borderColor:color,
+        borderWidth:2,
+        pointRadius:0,
+        pointHoverRadius:5,
+        pointHoverBackgroundColor:color,
+        pointHoverBorderColor:'#fff',
+        pointHoverBorderWidth:2,
+        tension:.4,
+        fill:true,
+        backgroundColor:grad
+      }]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      animation:{duration:600,easing:'easeOutCubic'},
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'rgba(10,10,10,.9)',
+          titleColor:'#fff',
+          bodyColor:'rgba(255,255,255,.75)',
+          titleFont:{size:10,weight:'600',family:'Inter'},
+          bodyFont:{size:9,family:'Inter'},
+          padding:9,cornerRadius:8,
+          callbacks:{
+            title:function(items){return items[0].label;},
+            label:function(item){return ' '+fmt(item.raw);}
+          }
+        }
+      },
+      interaction:{mode:'index',intersect:false},
+      scales:{
+        x:{
+          display:false,
+          grid:{display:false}
+        },
+        y:{
+          display:false,
+          grid:{display:false}
+        }
+      }
+    }
+  });
+}
+
+/* ════════════════════════════════
+   DATA PROCESSING
+════════════════════════════════ */
+function parseDate(dv){
+  if(!dv) return null;
+  var nv=dv.nativeValue!==undefined?dv.nativeValue:dv.value;
+  var fv=(dv.formattedValue||'').trim();
+  /* epoch ms */
+  if(typeof nv==='number'&&nv>1e10){
+    var d=new Date(nv);
+    if(d.getFullYear()>=1990&&d.getFullYear()<=2050) return d;
+  }
+  /* year integer */
+  if(typeof nv==='number'&&nv>=1990&&nv<=2050) return new Date(nv,0,1);
+  /* month integer 1-12 */
+  if(typeof nv==='number'&&nv>=1&&nv<=12) return new Date(2000,nv-1,1);
+  /* formattedValue string */
+  if(fv){
+    var iso=fv.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if(iso) return new Date(+iso[1],+iso[2]-1,+iso[3]);
+    var d2=new Date(fv);
+    if(!isNaN(d2.getTime())&&d2.getFullYear()>=1990) return d2;
+  }
+  return null;
+}
+
+function formatLabel(dv){
+  if(!dv) return '';
+  var fv=(dv.formattedValue||'').trim();
+  if(fv&&fv!=='%null%'&&fv!=='Null') return fv;
+  /* fallback: format nativeValue */
+  var nv=dv.nativeValue;
+  if(typeof nv==='number'&&nv>=1990&&nv<=2050) return String(nv);
+  if(typeof nv==='number'&&nv>=1&&nv<=12){
+    var M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return M[nv-1];
+  }
+  if(typeof nv==='number'&&nv>1e10){
+    var d=new Date(nv);
+    var M2=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return d.getDate()+' '+M2[d.getMonth()];
+  }
+  return String(nv||'');
+}
+
+/* ════════════════════════════════
+   RENDER
+════════════════════════════════ */
+function render(rows,enc){
+  /* find keys */
+  if(!rows.length) return;
+  var rowKeys=Object.keys(rows[0]);
+
+  function findKey(encField){
+    if(!encField) return null;
+    var nm=encField.name.toLowerCase();
+    for(var i=0;i<rowKeys.length;i++) if(rowKeys[i].toLowerCase()===nm) return rowKeys[i];
+    return null;
+  }
+
+  var hdrKey   =findKey(enc.header);
+  var amountKey=findKey(enc.amount);
+  var dateKey  =findKey(enc.date);
+
+  /* if no date key, try to auto-detect */
+  if(!dateKey){
+    rowKeys.forEach(function(k){
+      if(dateKey) return;
+      var kl=k.toLowerCase();
+      if(kl.indexOf('date')>=0||kl.indexOf('month')>=0||kl.indexOf('day')>=0||kl.indexOf('year')>=0||kl.indexOf('period')>=0){
+        dateKey=k;
+      }
+    });
+  }
+
+  function dvStr(row,k){
+    if(!k||!row[k]) return null;
+    var f=row[k].formattedValue;
+    return(f&&f!=='%null%'&&f!=='Null'&&f.trim()!=='')?f.trim():null;
+  }
+  function dvNum(row,k){
+    if(!k||!row[k]) return null;
+    var n=parseFloat(row[k].nativeValue!==undefined?row[k].nativeValue:row[k].value);
+    return isNaN(n)?null:n;
+  }
+
+  /* ── header: use first row's value ── */
+  var headerText=dvStr(rows[0],hdrKey);
+  if(!headerText&&enc.amount) headerText=enc.amount.name.replace(/^(SUM|AVG|MAX|MIN)\((.+)\)$/i,'$2').trim();
+  $('card-hdr').textContent=(headerText||'KPI Metric').toUpperCase();
+
+  /* ── collect time series ── */
+  var pts=[];
+  rows.forEach(function(row){
+    var val=dvNum(row,amountKey);
+    if(val===null) return;
+    var lbl=dateKey?formatLabel(row[dateKey]):'';
+    var dateObj=dateKey?parseDate(row[dateKey]):null;
+    pts.push({val:val,lbl:lbl,date:dateObj});
+  });
+
+  /* sort by date if available */
+  if(pts.length&&pts[0].date){
+    pts.sort(function(a,b){return (a.date?a.date.getTime():0)-(b.date?b.date.getTime():0);});
+  }
+
+  /* deduplicate by label */
+  var seen={}, unique=[];
+  pts.forEach(function(p){
+    if(!seen[p.lbl]){seen[p.lbl]=true;unique.push(p);}
+  });
+  pts=unique;
+
+  if(!pts.length) return;
+
+  var vals=pts.map(function(p){return p.val;});
+  var labels=pts.map(function(p){return p.lbl;});
+
+  /* ── latest value ── */
+  var latest=vals[vals.length-1];
+  $('amount').textContent=fmt(latest);
+
+  /* ── average ── */
+  var avg=vals.reduce(function(s,v){return s+v;},0)/vals.length;
+  $('avg-lbl').textContent='Avg '+fmt(avg);
+
+  /* ── variance vs average ── */
+  var deltaVsAvg=avg!==0?((latest-avg)/Math.abs(avg))*100:null;
+  var chip=$('delta-chip');
+  if(deltaVsAvg!==null){
+    var up=deltaVsAvg>=0;
+    chip.className='neu'; /* reset */
+    chip.className=up?'up':'dn';
+    chip.textContent=(up?'▲ ':' ▼ ')+(deltaVsAvg>=0?'+':'')+deltaVsAvg.toFixed(1)+'% vs avg';
+  } else {
+    chip.className='neu';chip.textContent='—';
+  }
+
+  /* ── chart ── */
+  buildChart(labels,vals);
+
+  /* ── x-axis labels: first + last ── */
+  var xlEl=$('x-labels');
+  xlEl.innerHTML='';
+  if(labels.length){
+    var s1=document.createElement('span');s1.textContent=labels[0];xlEl.appendChild(s1);
+    if(labels.length>1){
+      var s2=document.createElement('span');s2.textContent=labels[labels.length-1];xlEl.appendChild(s2);
+    }
+  }
+
+  /* ── chart tooltip: latest label + value ── */
+  $('chart-tooltip').textContent=fmt(latest);
+
+  applyScale(appEl.offsetWidth||280);
+}
+
+/* ════════════════════════════════
+   DATA READER — confirmed working
+════════════════════════════════ */
+async function getData(ws){
+  var rows=[],rdr=await ws.getSummaryDataReaderAsync(undefined,{ignoreSelection:true});
+  for(var i=0;i<rdr.pageCount;i++){
+    var pg=await rdr.getPageAsync(i);
+    pg.data.forEach(function(r){
+      var row={};
+      pg.columns.forEach(function(c,idx){row[c.fieldName]=r[idx];});
+      rows.push(row);
+    });
+  }
+  await rdr.releaseAsync();
+  return rows;
+}
+
+async function getEnc(ws){
+  var spec=await ws.getVisualSpecificationAsync(),map={};
+  if(spec.activeMarksSpecificationIndex<0) return map;
+  spec.marksSpecifications[spec.activeMarksSpecificationIndex]
+      .encodings.forEach(function(e){map[e.id]=e.field;});
+  return map;
+}
+
+/* ════════════════════════════════
+   INIT — confirmed working pattern
+════════════════════════════════ */
+window.onload=tableau.extensions.initializeAsync().then(function(){
+  var ws=tableau.extensions.worksheetContent.worksheet;
+  var update=async function(){
+    var data=await getData(ws);
+    var enc =await getEnc(ws);
+    render(data,enc);
+  };
+  ws.addEventListener(tableau.TableauEventType.SummaryDataChanged,update);
+  update();
+});
+
+})();
+</script>
+</body>
+</html>
