@@ -11,20 +11,24 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
 :root{
-  --bg:     #f0f2f5;   /* dashboard background — warm neutral */
-  --card:   #ffffff;
-  --bdr:    rgba(0,0,0,.07);
-  --surf:   #f8fafc;
+  /* background: soft radial like reference */
+  --bg:     radial-gradient(circle at top left,#dbeafe 0%,#f8fafc 35%,#eef2ff 100%);
+  --card:   rgba(255,255,255,.82);
+  --bdr:    rgba(255,255,255,.45);
+  --bdr-d:  rgba(15,23,42,.07);
+  --surf:   rgba(248,250,252,.6);
   --t1:     #0f172a;
   --t2:     #334155;
   --t3:     #64748b;
   --t4:     #94a3b8;
   --t5:     #cbd5e1;
-  --g:      #16a34a;  --gb:#dcfce7; --gd:#15803d;
-  --r:      #dc2626;  --rb:#fee2e2; --rd:#b91c1c;
-  --b:      #3b82f6;  --bb:#eff6ff;
+  --g:      #22c55e;  --gb:rgba(34,197,94,.12);  --gd:#15803d;
+  --r:      #ef4444;  --rb:rgba(239,68,68,.12);   --rd:#b91c1c;
+  --b:      #3b82f6;  --bb:rgba(59,130,246,.12);
+  --shadow:       0 10px 30px rgba(15,23,42,.08),0 2px 8px rgba(15,23,42,.04);
+  --shadow-hover: 0 20px 50px rgba(15,23,42,.15),0 8px 20px rgba(15,23,42,.08);
   --ease:   cubic-bezier(.22,.68,0,1.1);
-  --font:   'Inter',-apple-system,sans-serif;
+  --font:   'Inter',-apple-system,'Segoe UI',sans-serif;
 }
 
 html,body{
@@ -42,44 +46,67 @@ html,body{
 }
 
 /* ════════════════════════════════
-   CARD
+   CARD — glassmorphism + enter animation
 ════════════════════════════════ */
 #card{
-  background:var(--card);
-  border-radius:10px;
-  border:1px solid var(--bdr);
-  overflow:hidden;
   position:relative;
-  box-shadow:
-    0 1px 3px rgba(0,0,0,.04),
-    0 6px 18px rgba(0,0,0,.07);
-  transition:box-shadow .25s var(--ease), transform .2s var(--ease);
+  overflow:hidden;
+  background:var(--card);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+  border-radius:20px;
+  border:1px solid var(--bdr);
+  box-shadow:var(--shadow);
+  transition:transform .35s var(--ease),box-shadow .35s var(--ease);
   cursor:default;
+  animation:cardEnter .8s var(--ease);
 }
 #card:hover{
-  box-shadow:
-    0 4px 12px rgba(0,0,0,.07),
-    0 18px 44px rgba(0,0,0,.1);
-  transform:translateY(-2px);
+  transform:translateY(-4px) scale(1.02);
+  box-shadow:var(--shadow-hover);
+}
+@keyframes cardEnter{
+  from{opacity:0;transform:translateY(24px) scale(.94);}
+  to{opacity:1;transform:translateY(0) scale(1);}
 }
 
-/* accent stripe — colour set by JS based on trend */
+/* ── ANIMATED STRIPE — flows like reference ── */
 #stripe{
-  height:2px;width:100%;
+  height:4px;width:100%;
+  background:linear-gradient(90deg,#22c55e,#4ade80,#22c55e);
+  background-size:200% 100%;
+  animation:flow 4s linear infinite;
+  transition:background-image .3s ease;
+}
+@keyframes flow{0%{background-position:0 0}100%{background-position:200% 0}}
+#stripe.red{background-image:linear-gradient(90deg,#ef4444,#f87171,#ef4444);}
+#stripe.blue{background-image:linear-gradient(90deg,#3b82f6,#60a5fa,#3b82f6);}
+
+/* ── LIVE DOT ── */
+.live-dot{
+  position:absolute;top:12px;right:12px;
+  width:7px;height:7px;border-radius:50%;
   background:var(--g);
-  transition:background .3s ease;
+  animation:livePulse 2.2s infinite;
+  z-index:2;
+  transition:background .3s;
+}
+@keyframes livePulse{
+  0%{box-shadow:0 0 0 0 rgba(34,197,94,.6);}
+  70%{box-shadow:0 0 0 9px rgba(34,197,94,0);}
+  100%{box-shadow:0 0 0 0 rgba(34,197,94,0);}
 }
 
-.body{padding:9px 9px 8px;}
+.body{padding:10px 10px 8px;position:relative;}
 
 /* ── HEADER ── */
 #card-hdr{
-  font-size:6px;font-weight:700;
-  letter-spacing:.1em;text-transform:uppercase;
+  font-size:6.5px;font-weight:700;
+  letter-spacing:.13em;text-transform:uppercase;
   color:var(--t4);
   margin-bottom:0;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  /* always visible — header stays visible on hover */
+  padding-right:14px; /* space for live dot */
   transition:color .2s;
 }
 #card:hover #card-hdr{color:var(--t3);}
@@ -95,97 +122,88 @@ html,body{
     opacity .25s ease,
     transform .25s var(--ease),
     margin .3s var(--ease);
-  margin-top:5px;
+  margin-top:6px;
   margin-bottom:0;
 }
 #card:hover #amt-block{
-  max-height:0;
-  opacity:0;
+  max-height:0;opacity:0;
   transform:translateY(-6px);
-  margin-top:0;
-  margin-bottom:0;
+  margin-top:0;margin-bottom:0;
 }
 
 #amount{
-  font-size:18px;font-weight:700;color:var(--t1);
-  letter-spacing:-.03em;line-height:1;
+  font-size:22px;font-weight:800;color:var(--t1);
+  letter-spacing:-.06em;line-height:1;
   margin-bottom:6px;
   font-variant-numeric:tabular-nums;
   white-space:nowrap;
+  transition:transform .3s ease;
 }
+#card:hover #amount{transform:translateY(-2px);}
 
 .meta-row{
-  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  display:flex;align-items:center;gap:7px;flex-wrap:wrap;
 }
 #avg-lbl{
-  font-size:6px;font-weight:500;color:var(--t3);
+  font-size:7px;font-weight:600;color:var(--t3);
   white-space:nowrap;
 }
 #delta-chip{
   display:inline-flex;align-items:center;gap:3px;
-  font-size:6px;font-weight:700;
-  padding:1px 5px;border-radius:99px;
+  font-size:8px;font-weight:700;
+  padding:3px 7px;border-radius:999px;
   white-space:nowrap;
+  border:1px solid rgba(255,255,255,.5);
+  backdrop-filter:blur(10px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 3px 8px rgba(0,0,0,.04);
   transition:background .25s,color .25s;
 }
-#delta-chip.up{color:var(--gd);background:var(--gb);}
-#delta-chip.dn{color:var(--rd);background:var(--rb);}
-#delta-chip.neu{color:var(--t3);background:var(--surf);}
+#delta-chip.up{background:rgba(34,197,94,.12);color:#15803d;}
+#delta-chip.dn{background:rgba(239,68,68,.12);color:#b91c1c;}
+#delta-chip.neu{background:rgba(148,163,184,.1);color:var(--t3);}
 
 /* ── DIVIDER — hides on hover ── */
 #divider{
-  height:0.5px;background:var(--bdr);
-  margin:7px 0 5px;
+  height:0.5px;background:rgba(15,23,42,.07);
+  margin:8px 0 6px;
   transition:margin .3s var(--ease),opacity .2s,max-height .3s var(--ease);
   max-height:1px;opacity:1;overflow:hidden;
 }
-#card:hover #divider{
-  opacity:0;margin:0;max-height:0;
-}
+#card:hover #divider{opacity:0;margin:0;max-height:0;}
 
-/* ── CHART WRAP ── */
+/* ── CHART WRAP — glass inset panel ── */
 #chart-wrap{
   position:relative;
-  height:44px;
+  height:48px;
+  border-radius:12px;
+  overflow:hidden;
+  background:linear-gradient(180deg,rgba(255,255,255,.6),rgba(248,250,252,.25));
+  border:1px solid rgba(255,255,255,.45);
   transition:height .38s var(--ease),margin .3s var(--ease);
-  /* small margin top when amount visible */
   margin-top:0;
 }
-#card:hover #chart-wrap{
-  height:66px;
-  /* push chart up to fill space left by hiding amount */
-  margin-top:8px;
-}
-#chart-canvas{
-  width:100%!important;height:100%!important;
-  display:block;
-}
+#card:hover #chart-wrap{height:72px;margin-top:8px;}
+#chart-canvas{width:100%!important;height:100%!important;display:block;}
 
-/* ── CHART X-AXIS LABELS — only on hover ── */
+/* ── CHART X-AXIS LABELS ── */
 #x-labels{
   display:flex;justify-content:space-between;
-  padding:4px 0 0;
-  opacity:0;
-  transition:opacity .25s ease .1s;
-  pointer-events:none;
+  padding:5px 0 0;
+  opacity:0;transition:opacity .25s ease .1s;pointer-events:none;
 }
 #card:hover #x-labels{opacity:1;}
-#x-labels span{
-  font-size:5px;font-weight:500;color:var(--t5);
-  white-space:nowrap;
-}
+#x-labels span{font-size:6px;font-weight:600;color:var(--t4);white-space:nowrap;}
 
-/* ── TOOLTIP OVERLAY — latest value in chart ── */
+/* ── CHART TOOLTIP ── */
 #chart-tooltip{
-  position:absolute;top:6px;right:0;
-  font-size:6px;font-weight:700;
+  position:absolute;top:6px;right:6px;
+  font-size:7px;font-weight:700;
+  background:rgba(255,255,255,.88);
+  border:1px solid rgba(255,255,255,.5);
+  padding:3px 6px;border-radius:7px;
   color:var(--t2);
-  opacity:0;
-  transition:opacity .2s;
-  pointer-events:none;
-  background:rgba(255,255,255,.9);
-  padding:1px 4px;border-radius:4px;
-  border:0.5px solid var(--bdr);
+  backdrop-filter:blur(10px);
+  opacity:0;transition:opacity .2s;pointer-events:none;
 }
 #card:hover #chart-tooltip{opacity:1;}
 
@@ -195,8 +213,7 @@ html,body{
 .skel{
   background:linear-gradient(90deg,#f0f2f5 25%,#e8eaed 50%,#f0f2f5 75%);
   background-size:200% 100%;
-  animation:shimmer 1.4s infinite;
-  border-radius:6px;
+  animation:shimmer 1.4s infinite;border-radius:6px;
 }
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 </style>
@@ -206,6 +223,7 @@ html,body{
   <div id="card">
     <div id="stripe"></div>
     <div class="body">
+      <div class="live-dot" id="live-dot"></div>
       <div id="card-hdr">KPI Metric</div>
 
       <div id="amt-block">
@@ -290,8 +308,9 @@ window.addEventListener('resize',function(){applyScale(appEl.offsetWidth||280);}
    CHART
 ════════════════════════════════ */
 function makeGradient(ctx,color){
-  var g=ctx.createLinearGradient(0,0,0,110);
-  g.addColorStop(0,color+'40');
+  var g=ctx.createLinearGradient(0,0,0,160);
+  g.addColorStop(0,color+'66');
+  g.addColorStop(.4,color+'18');
   g.addColorStop(1,color+'00');
   return g;
 }
@@ -306,8 +325,19 @@ function getChartColor(vals){
 
 function buildChart(labels,values){
   var color=getChartColor(values);
-  /* update stripe */
-  $('stripe').style.background=color;
+  /* update stripe — animated gradient classes */
+  var stripeEl=$('stripe');
+  stripeEl.className='';
+  if(color==='#ef4444') stripeEl.className='red';
+  else if(color==='#3b82f6') stripeEl.className='blue';
+  /* green is default (no class) */
+  /* also update live dot colour */
+  var dotEl=$('live-dot');
+  if(dotEl){
+    dotEl.style.background=color;
+    dotEl.style.animation='none';
+    setTimeout(function(){dotEl.style.animation='';},10);
+  }
 
   var ctx=$('chart-canvas').getContext('2d');
   var grad=makeGradient(ctx,color);
@@ -321,6 +351,19 @@ function buildChart(labels,values){
     return;
   }
 
+  /* glow plugin from reference design */
+  var glowPlugin={
+    id:'glow',
+    beforeDatasetDraw:function(chart){
+      var ctx2=chart.ctx;
+      ctx2.save();
+      ctx2.shadowColor=color;
+      ctx2.shadowBlur=14;
+      ctx2.shadowOffsetY=4;
+    },
+    afterDatasetDraw:function(chart){chart.ctx.restore();}
+  };
+
   chartObj=new Chart(ctx,{
     type:'line',
     data:{
@@ -328,13 +371,13 @@ function buildChart(labels,values){
       datasets:[{
         data:values,
         borderColor:color,
-        borderWidth:2,
+        borderWidth:3,
         pointRadius:0,
-        pointHoverRadius:5,
+        pointHoverRadius:6,
         pointHoverBackgroundColor:color,
         pointHoverBorderColor:'#fff',
-        pointHoverBorderWidth:2,
-        tension:.4,
+        pointHoverBorderWidth:3,
+        tension:.42,
         fill:true,
         backgroundColor:grad
       }]
@@ -342,7 +385,7 @@ function buildChart(labels,values){
     options:{
       responsive:true,
       maintainAspectRatio:false,
-      animation:{duration:600,easing:'easeOutCubic'},
+      animation:{duration:2200,easing:'easeOutQuart'},
       plugins:{
         legend:{display:false},
         tooltip:{
@@ -359,17 +402,16 @@ function buildChart(labels,values){
         }
       },
       interaction:{mode:'index',intersect:false},
+      animations:{
+        y:{from:0,duration:1800,easing:'easeOutQuart'},
+        x:{duration:1000}
+      },
       scales:{
-        x:{
-          display:false,
-          grid:{display:false}
-        },
-        y:{
-          display:false,
-          grid:{display:false}
-        }
+        x:{display:false,grid:{display:false}},
+        y:{display:false,min:0,grid:{display:false}}
       }
-    }
+    },
+    plugins:[glowPlugin]
   });
 }
 
