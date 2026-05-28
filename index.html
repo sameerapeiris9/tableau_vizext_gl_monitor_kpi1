@@ -6,33 +6,26 @@
 <title>KPI Chart Card</title>
 <script src="https://cdn.jsdelivr.net/gh/tableau/extensions-api/lib/tableau.extensions.1.latest.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
 :root{
-  /* background: soft radial like reference */
-  --bg:     rgba(255,255,255);
-  --card:   rgba(255,255,255,.82);
-  
-  --surf:   rgba(248,250,252,.6);
-  --t1:     #0f172a;
-  --t2:     #334155;
-  --t3:     #64748b;
-  --t4:     #94a3b8;
-  --t5:     #cbd5e1;
-  --g:      #22c55e;  --gb:rgba(34,197,94,.12);  --gd:#15803d;
-  --r:      #ef4444;  --rb:rgba(239,68,68,.12);   --rd:#b91c1c;
-  --b:      #3b82f6;  --bb:rgba(59,130,246,.12);
-  --shadow:       0 10px 30px rgba(15,23,42,.08),0 2px 8px rgba(15,23,42,.04);
-  --shadow-hover: 0 20px 50px rgba(15,23,42,.15),0 8px 20px rgba(15,23,42,.08);
-  --ease:   cubic-bezier(.22,.68,0,1.1);
-  --font:   'Inter',-apple-system,'Segoe UI',sans-serif;
+  --font:'Inter',-apple-system,sans-serif;
+  --mono:'JetBrains Mono',monospace;
+  --ease:cubic-bezier(.22,.68,0,1.1);
+  --ease2:cubic-bezier(.16,1,.3,1);
+  --t1:#0f172a;
+  --t2:#334155;
+  --t3:#64748b;
+  --t4:#94a3b8;
+  --t5:#cbd5e1;
 }
 
 html,body{
   width:100%;height:100%;
-  background:var(--bg);
+  background:#F8F9FC;
   font-family:var(--font);
   display:flex;align-items:center;justify-content:center;
   overflow:hidden;
@@ -40,72 +33,64 @@ html,body{
 }
 
 #app{
-  width:calc(100% - 12px);
-  max-width:168px;
+  width:calc(100% - 16px);
+  max-width:220px;
+  position:relative;
 }
 
 /* ════════════════════════════════
-   CARD — glassmorphism + enter animation
+   CARD — matches suspense card exactly
 ════════════════════════════════ */
 #card{
-  position:relative;
+  background:rgba(255,255,255,.82);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  border-radius:22px;
+  border:1px solid rgba(255,255,255,.7);
   overflow:hidden;
-  background:var(--card);
-  backdrop-filter:blur(18px);
-  -webkit-backdrop-filter:blur(18px);
-  border-radius:20px;
-  border:1px solid var(--bdr);
-  box-shadow:var(--shadow);
-  transition:transform .35s var(--ease),box-shadow .35s var(--ease);
+  position:relative;
+  box-shadow:
+    0 2px 8px rgba(15,23,42,.06),
+    0 10px 32px rgba(15,23,42,.08),
+    inset 0 1px 0 rgba(255,255,255,.9);
+  transition:
+    box-shadow .3s var(--ease2),
+    transform .25s var(--ease2);
   cursor:default;
-  animation:cardEnter .8s var(--ease);
+  animation:cardIn .7s var(--ease2) both;
+}
+@keyframes cardIn{
+  from{opacity:0;transform:translateY(18px) scale(.96)}
+  to{opacity:1;transform:none}
 }
 #card:hover{
-  transform:translateY(-4px) scale(1.02);
-  box-shadow:var(--shadow-hover);
+  box-shadow:
+    0 4px 16px rgba(15,23,42,.1),
+    0 24px 52px rgba(15,23,42,.13),
+    inset 0 1px 0 rgba(255,255,255,.9);
+  transform:translateY(-3px);
 }
-@keyframes cardEnter{
-  from{opacity:0;transform:translateY(24px) scale(.94);}
-  to{opacity:1;transform:translateY(0) scale(1);}
-}
-
-/* ── ANIMATED STRIPE — flows like reference ── */
-#stripe{
-  height:4px;width:100%;
-  background:linear-gradient(90deg,#22c55e,#4ade80,#22c55e);
-  background-size:200% 100%;
-  animation:flow 4s linear infinite;
-  transition:background-image .3s ease;
-}
-@keyframes flow{0%{background-position:0 0}100%{background-position:200% 0}}
-#stripe.red{background-image:linear-gradient(90deg,#ef4444,#f87171,#ef4444);}
-#stripe.blue{background-image:linear-gradient(90deg,#3b82f6,#60a5fa,#3b82f6);}
-
-/* ── LIVE DOT ── */
-.live-dot{
-  position:absolute;top:12px;right:12px;
-  width:7px;height:7px;border-radius:50%;
-  background:var(--g);
-  animation:livePulse 2.2s infinite;
-  z-index:2;
-  transition:background .3s;
-}
-@keyframes livePulse{
-  0%{box-shadow:0 0 0 0 rgba(34,197,94,.6);}
-  70%{box-shadow:0 0 0 9px rgba(34,197,94,0);}
-  100%{box-shadow:0 0 0 0 rgba(34,197,94,0);}
+/* glass sheen */
+#card::after{
+  content:'';
+  position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,.22) 0%,transparent 55%);
+  border-radius:22px;pointer-events:none;z-index:0;
 }
 
-.body{padding:10px 10px 8px;position:relative;}
+/* ── BODY ── */
+.body{
+  padding:16px 16px 14px;
+  position:relative;z-index:1;
+}
 
 /* ── HEADER ── */
 #card-hdr{
-  font-size:6.5px;font-weight:700;
+  font-size:8px;font-weight:700;
   letter-spacing:.13em;text-transform:uppercase;
   color:var(--t4);
-  margin-bottom:0;
+  margin-bottom:12px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  padding-right:14px; /* space for live dot */
   transition:color .2s;
 }
 #card:hover #card-hdr{color:var(--t3);}
@@ -113,26 +98,27 @@ html,body{
 /* ── AMOUNT BLOCK — hides on hover ── */
 #amt-block{
   overflow:hidden;
-  max-height:100px;
+  max-height:80px;
   opacity:1;
   transform:translateY(0);
   transition:
-    max-height .35s var(--ease),
+    max-height .35s var(--ease2),
     opacity .25s ease,
-    transform .25s var(--ease),
-    margin .3s var(--ease);
-  margin-top:6px;
+    transform .25s var(--ease2),
+    margin .3s var(--ease2);
   margin-bottom:0;
 }
 #card:hover #amt-block{
   max-height:0;opacity:0;
   transform:translateY(-6px);
-  margin-top:0;margin-bottom:0;
+  margin-bottom:0;
 }
 
 #amount{
-  font-size:22px;font-weight:800;color:var(--t1);
-  letter-spacing:-.06em;line-height:1;
+  font-family:var(--mono);
+  font-size:28px;font-weight:700;
+  color:var(--t1);
+  letter-spacing:-.04em;line-height:1;
   margin-bottom:6px;
   font-variant-numeric:tabular-nums;
   white-space:nowrap;
@@ -142,19 +128,20 @@ html,body{
 
 .meta-row{
   display:flex;align-items:center;gap:7px;flex-wrap:wrap;
+  margin-bottom:2px;
 }
 #avg-lbl{
-  font-size:7px;font-weight:600;color:var(--t3);
-  white-space:nowrap;
+  font-size:8px;font-weight:600;
+  color:var(--t3);white-space:nowrap;
 }
 #delta-chip{
   display:inline-flex;align-items:center;gap:3px;
   font-size:8px;font-weight:700;
-  padding:3px 7px;border-radius:999px;
+  padding:3px 8px;border-radius:999px;
   white-space:nowrap;
   border:1px solid rgba(255,255,255,.5);
   backdrop-filter:blur(10px);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 3px 8px rgba(0,0,0,.04);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 2px 6px rgba(0,0,0,.04);
   transition:background .25s,color .25s;
 }
 #delta-chip.up{background:rgba(34,197,94,.12);color:#15803d;}
@@ -163,79 +150,75 @@ html,body{
 
 /* ── DIVIDER — hides on hover ── */
 #divider{
-  height:0.5px;background:rgba(15,23,42,.07);
-  margin:8px 0 6px;
-  transition:margin .3s var(--ease),opacity .2s,max-height .3s var(--ease);
+  height:0.5px;
+  background:linear-gradient(90deg,rgba(15,23,42,.08) 0%,transparent 100%);
+  margin:11px 0 10px;
+  transition:margin .3s var(--ease2),opacity .2s,max-height .3s var(--ease2);
   max-height:1px;opacity:1;overflow:hidden;
 }
 #card:hover #divider{opacity:0;margin:0;max-height:0;}
 
-/* ── CHART WRAP — glass inset panel ── */
+/* ── CHART WRAP — glass inset, expands on hover ── */
 #chart-wrap{
   position:relative;
-  height:48px;
-  border-radius:12px;
+  height:52px;
+  border-radius:14px;
   overflow:hidden;
-  background:linear-gradient(180deg,rgba(255,255,255,.6),rgba(248,250,252,.25));
-  border:1px solid rgba(255,255,255,.45);
-  transition:height .38s var(--ease),margin .3s var(--ease);
+  background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(248,250,252,.2));
+  border:1px solid rgba(255,255,255,.5);
+  transition:height .38s var(--ease2),margin .3s var(--ease2);
   margin-top:0;
 }
-#card:hover #chart-wrap{height:72px;margin-top:8px;}
+#card:hover #chart-wrap{height:80px;margin-top:8px;}
 #chart-canvas{width:100%!important;height:100%!important;display:block;}
 
-/* ── CHART X-AXIS LABELS ── */
+/* ── X-AXIS LABELS — appear on hover ── */
 #x-labels{
   display:flex;justify-content:space-between;
   padding:5px 0 0;
-  opacity:0;transition:opacity .25s ease .1s;pointer-events:none;
+  opacity:0;
+  transition:opacity .25s ease .1s;
+  pointer-events:none;
 }
 #card:hover #x-labels{opacity:1;}
-#x-labels span{font-size:6px;font-weight:600;color:var(--t4);white-space:nowrap;}
+#x-labels span{
+  font-size:7px;font-weight:600;
+  color:var(--t5);white-space:nowrap;
+}
 
-/* ── CHART TOOLTIP ── */
+/* ── CHART VALUE BADGE ── */
 #chart-tooltip{
-  position:absolute;top:6px;right:6px;
-  font-size:7px;font-weight:700;
-  background:rgba(255,255,255,.88);
-  border:1px solid rgba(255,255,255,.5);
-  padding:3px 6px;border-radius:7px;
+  position:absolute;top:6px;right:7px;
+  font-size:8px;font-weight:700;
+  font-family:var(--mono);
+  background:rgba(255,255,255,.9);
+  border:1px solid rgba(255,255,255,.6);
+  padding:3px 7px;border-radius:8px;
   color:var(--t2);
   backdrop-filter:blur(10px);
   opacity:0;transition:opacity .2s;pointer-events:none;
+  z-index:2;
 }
 #card:hover #chart-tooltip{opacity:1;}
-
-/* ════════════════════════════════
-   LOADING STATE
-════════════════════════════════ */
-.skel{
-  background:linear-gradient(90deg,#f0f2f5 25%,#e8eaed 50%,#f0f2f5 75%);
-  background-size:200% 100%;
-  animation:shimmer 1.4s infinite;border-radius:6px;
-}
-@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 </style>
 </head>
 <body>
 <div id="app">
   <div id="card">
-    
     <div class="body">
-      
       <div id="card-hdr">KPI Metric</div>
 
       <div id="amt-block">
         <div id="amount">—</div>
         <div class="meta-row">
           <span id="avg-lbl">Avg —</span>
-          <span id="delta-chip" class="neu">— —</span>
+          <span id="delta-chip" class="neu">—</span>
         </div>
       </div>
 
       <div id="divider"></div>
 
-      <div id="chart-wrap" style="position:relative">
+      <div id="chart-wrap">
         <canvas id="chart-canvas"></canvas>
         <div id="chart-tooltip"></div>
       </div>
@@ -252,60 +235,37 @@ var $=function(id){return document.getElementById(id);};
 var appEl=$('app');
 var chartObj=null;
 
-/* ════════════════════════════════
-   NUMBER FORMATTING — smart units, comma-separated
-════════════════════════════════ */
-function fmtSmart(n){
+/* ════════════════ NUMBER FORMAT ════════════════ */
+function fmt(n){
   if(n===null||isNaN(n)) return '—';
-  var abs=Math.abs(n), s=n<0?'-':'';
-  /* Billions */
+  var abs=Math.abs(n),s=n<0?'-':'';
   if(abs>=1e9){
     var b=abs/1e9;
-    return s+(b>=100?Math.round(b).toLocaleString('en-US'):b%1===0?b.toLocaleString('en-US'):parseFloat(b.toFixed(2)).toLocaleString('en-US'))+' Bn';
+    return s+(b>=100?Math.round(b).toLocaleString('en-US'):parseFloat(b.toFixed(2)).toLocaleString('en-US'))+' Bn';
   }
-  /* Millions */
   if(abs>=1e6){
     var m=abs/1e6;
-    return s+(m>=100?Math.round(m).toLocaleString('en-US'):m%1===0?m.toLocaleString('en-US'):parseFloat(m.toFixed(2)).toLocaleString('en-US'))+' Mn';
+    return s+(m>=100?Math.round(m).toLocaleString('en-US'):parseFloat(m.toFixed(2)).toLocaleString('en-US'))+' Mn';
   }
-  /* Thousands */
   if(abs>=1e3){
     var k=abs/1e3;
-    return s+(k>=100?Math.round(k).toLocaleString('en-US'):parseFloat(k.toFixed(1)).toLocaleString('en-US'))+' K';
+    return s+parseFloat(k.toFixed(1)).toLocaleString('en-US')+' K';
   }
-  /* Small values — could be percentages or ratios */
-  if(abs<100){
-    return s+parseFloat(abs.toFixed(2)).toLocaleString('en-US');
-  }
+  if(abs<100) return s+parseFloat(abs.toFixed(2)).toLocaleString('en-US');
   return s+Math.round(abs).toLocaleString('en-US');
 }
 
-/* comma-separated no decimals for large integers */
-function fmtComma(n){
-  if(n===null||isNaN(n)) return '—';
-  return Math.round(Math.abs(n)).toLocaleString('en-US')*(n<0?-1:1);
-}
-
-/* pick format: use smart units for large numbers */
-function fmt(n){return fmtSmart(n);}
-
-/* ════════════════════════════════
-   RESPONSIVE
-════════════════════════════════ */
+/* ════════════════ RESPONSIVE ════════════════ */
 function applyScale(w){
-  var fs=Math.min(9,Math.max(6,Math.round((w/168)*8)));
-  appEl.style.fontSize=fs+'px';
-  var amtFs=Math.min(20,Math.max(11,Math.round((w/168)*18)));
-  $('amount').style.fontSize=amtFs+'px';
+  var heroSz=Math.min(30,Math.max(17,Math.round((w/220)*28)));
+  $('amount').style.fontSize=heroSz+'px';
 }
 if(window.ResizeObserver){
   new ResizeObserver(function(e){applyScale(e[0].contentRect.width);}).observe(appEl);
 }
-window.addEventListener('resize',function(){applyScale(appEl.offsetWidth||280);});
+window.addEventListener('resize',function(){applyScale(appEl.offsetWidth||220);});
 
-/* ════════════════════════════════
-   CHART
-════════════════════════════════ */
+/* ════════════════ CHART ════════════════ */
 function makeGradient(ctx,color){
   var g=ctx.createLinearGradient(0,0,0,160);
   g.addColorStop(0,color+'66');
@@ -314,32 +274,24 @@ function makeGradient(ctx,color){
   return g;
 }
 
-function getChartColor(vals){
-  if(!vals.length) return '#16a34a';
-  var first=vals[0], last=vals[vals.length-1];
-  if(last>first) return '#16a34a';
-  if(last<first) return '#dc2626';
-  return '#3b82f6';
+function getColor(vals){
+  if(!vals.length) return '#22c55e';
+  return vals[vals.length-1]>=vals[0]?'#22c55e':vals[vals.length-1]<vals[0]?'#ef4444':'#3b82f6';
 }
 
 function buildChart(labels,values){
-  var color=getChartColor(values);
-  /* update stripe — animated gradient classes */
-  var stripeEl=$('stripe');
-  stripeEl.className='';
-  if(color==='#ef4444') stripeEl.className='red';
-  else if(color==='#3b82f6') stripeEl.className='blue';
-  /* green is default (no class) */
-  /* also update live dot colour */
-  var dotEl=$('live-dot');
-  if(dotEl){
-    dotEl.style.background=color;
-    dotEl.style.animation='none';
-    setTimeout(function(){dotEl.style.animation='';},10);
-  }
-
+  var color=getColor(values);
   var ctx=$('chart-canvas').getContext('2d');
   var grad=makeGradient(ctx,color);
+
+  var glowPlugin={
+    id:'glow',
+    beforeDatasetDraw:function(chart){
+      var c=chart.ctx;c.save();
+      c.shadowColor=color;c.shadowBlur=14;c.shadowOffsetY=4;
+    },
+    afterDatasetDraw:function(chart){chart.ctx.restore();}
+  };
 
   if(chartObj){
     chartObj.data.labels=labels;
@@ -350,61 +302,40 @@ function buildChart(labels,values){
     return;
   }
 
-  /* glow plugin from reference design */
-  var glowPlugin={
-    id:'glow',
-    beforeDatasetDraw:function(chart){
-      var ctx2=chart.ctx;
-      ctx2.save();
-      ctx2.shadowColor=color;
-      ctx2.shadowBlur=14;
-      ctx2.shadowOffsetY=4;
-    },
-    afterDatasetDraw:function(chart){chart.ctx.restore();}
-  };
-
   chartObj=new Chart(ctx,{
     type:'line',
-    data:{
-      labels:labels,
-      datasets:[{
-        data:values,
-        borderColor:color,
-        borderWidth:3,
-        pointRadius:0,
-        pointHoverRadius:6,
-        pointHoverBackgroundColor:color,
-        pointHoverBorderColor:'#fff',
-        pointHoverBorderWidth:3,
-        tension:.42,
-        fill:true,
-        backgroundColor:grad
-      }]
-    },
+    data:{labels:labels,datasets:[{
+      data:values,
+      borderColor:color,
+      borderWidth:3,
+      pointRadius:0,
+      pointHoverRadius:6,
+      pointHoverBackgroundColor:color,
+      pointHoverBorderColor:'#fff',
+      pointHoverBorderWidth:3,
+      tension:.42,
+      fill:true,
+      backgroundColor:grad
+    }]},
     options:{
-      responsive:true,
-      maintainAspectRatio:false,
+      responsive:true,maintainAspectRatio:false,
       animation:{duration:2200,easing:'easeOutQuart'},
+      animations:{y:{from:0,duration:1800,easing:'easeOutQuart'},x:{duration:1000}},
       plugins:{
         legend:{display:false},
         tooltip:{
-          backgroundColor:'rgba(10,10,10,.9)',
-          titleColor:'#fff',
-          bodyColor:'rgba(255,255,255,.75)',
-          titleFont:{size:10,weight:'600',family:'Inter'},
+          backgroundColor:'rgba(10,15,26,.92)',
+          titleColor:'#f1f5f9',bodyColor:'rgba(255,255,255,.75)',
+          titleFont:{size:10,weight:'700',family:'Inter'},
           bodyFont:{size:9,family:'Inter'},
-          padding:9,cornerRadius:8,
+          padding:10,cornerRadius:9,
           callbacks:{
-            title:function(items){return items[0].label;},
-            label:function(item){return ' '+fmt(item.raw);}
+            title:function(i){return i[0].label;},
+            label:function(i){return ' '+fmt(i.raw);}
           }
         }
       },
       interaction:{mode:'index',intersect:false},
-      animations:{
-        y:{from:0,duration:1800,easing:'easeOutQuart'},
-        x:{duration:1000}
-      },
       scales:{
         x:{display:false,grid:{display:false}},
         y:{display:false,min:0,grid:{display:false}}
@@ -414,23 +345,14 @@ function buildChart(labels,values){
   });
 }
 
-/* ════════════════════════════════
-   DATA PROCESSING
-════════════════════════════════ */
+/* ════════════════ DATE HELPERS ════════════════ */
 function parseDate(dv){
   if(!dv) return null;
   var nv=dv.nativeValue!==undefined?dv.nativeValue:dv.value;
   var fv=(dv.formattedValue||'').trim();
-  /* epoch ms */
-  if(typeof nv==='number'&&nv>1e10){
-    var d=new Date(nv);
-    if(d.getFullYear()>=1990&&d.getFullYear()<=2050) return d;
-  }
-  /* year integer */
+  if(typeof nv==='number'&&nv>1e10){var d=new Date(nv);if(d.getFullYear()>=1990&&d.getFullYear()<=2050) return d;}
   if(typeof nv==='number'&&nv>=1990&&nv<=2050) return new Date(nv,0,1);
-  /* month integer 1-12 */
   if(typeof nv==='number'&&nv>=1&&nv<=12) return new Date(2000,nv-1,1);
-  /* formattedValue string */
   if(fv){
     var iso=fv.match(/^(\d{4})-(\d{2})-(\d{2})/);
     if(iso) return new Date(+iso[1],+iso[2]-1,+iso[3]);
@@ -439,12 +361,10 @@ function parseDate(dv){
   }
   return null;
 }
-
-function formatLabel(dv){
+function fmtLabel(dv){
   if(!dv) return '';
   var fv=(dv.formattedValue||'').trim();
   if(fv&&fv!=='%null%'&&fv!=='Null') return fv;
-  /* fallback: format nativeValue */
   var nv=dv.nativeValue;
   if(typeof nv==='number'&&nv>=1990&&nv<=2050) return String(nv);
   if(typeof nv==='number'&&nv>=1&&nv<=12){
@@ -459,34 +379,29 @@ function formatLabel(dv){
   return String(nv||'');
 }
 
-/* ════════════════════════════════
-   RENDER
-════════════════════════════════ */
+/* ════════════════ RENDER ════════════════ */
 function render(rows,enc){
   if(!rows.length) return;
   var rowKeys=Object.keys(rows[0]);
 
-  function findKey(encField){
-    if(!encField) return null;
-    var nm=encField.name.toLowerCase();
+  function findKey(ef){
+    if(!ef) return null;
+    var nm=ef.name.toLowerCase();
     for(var i=0;i<rowKeys.length;i++) if(rowKeys[i].toLowerCase()===nm) return rowKeys[i];
     return null;
   }
-  /* auto-detect date key if not mapped */
   function autoDateKey(){
-    var candidates=['date','month','day','year','period','posting'];
-    for(var ci=0;ci<candidates.length;ci++){
-      for(var ki=0;ki<rowKeys.length;ki++){
-        if(rowKeys[ki].toLowerCase().indexOf(candidates[ci])>=0) return rowKeys[ki];
-      }
-    }
+    var cands=['date','month','day','year','period','posting'];
+    for(var ci=0;ci<cands.length;ci++)
+      for(var ki=0;ki<rowKeys.length;ki++)
+        if(rowKeys[ki].toLowerCase().indexOf(cands[ci])>=0) return rowKeys[ki];
     return null;
   }
 
-  var hdrKey     = findKey(enc.header);
-  var displayKey = findKey(enc.display);   /* hero number — single selected day */
-  var trendKey   = findKey(enc.trend);     /* time-series for chart */
-  var dateKey    = findKey(enc.date) || autoDateKey();
+  var hdrKey    =findKey(enc.header);
+  var displayKey=findKey(enc.display);
+  var trendKey  =findKey(enc.trend);
+  var dateKey   =findKey(enc.date)||autoDateKey();
 
   function dvStr(row,k){
     if(!k||!row[k]) return null;
@@ -496,143 +411,96 @@ function render(rows,enc){
   function dvNum(row,k){
     if(!k||!row[k]) return null;
     var dv=row[k];
-    /* use nativeValue if defined (even if 0), otherwise value */
     var raw=dv.nativeValue!==undefined&&dv.nativeValue!==null?dv.nativeValue:dv.value;
-    var n=parseFloat(raw);
-    return isNaN(n)?null:n;
+    var n=parseFloat(raw);return isNaN(n)?null:n;
   }
 
-  /* ── header ── */
-  var headerText=dvStr(rows[0],hdrKey);
-  if(!headerText){
-    var srcKey=displayKey||trendKey;
-    if(srcKey&&enc[srcKey==='display'?'display':'trend']){
-      var fn=enc[displayKey?'display':'trend'];
-      headerText=fn?fn.name.replace(/^(SUM|AVG|MAX|MIN)\((.+)\)$/i,'$2').trim():null;
-    }
+  /* header */
+  var hdrTxt=dvStr(rows[0],hdrKey);
+  if(!hdrTxt){
+    var fn=enc[displayKey?'display':'trend'];
+    hdrTxt=fn?fn.name.replace(/^(SUM|AVG|MAX|MIN)\((.+)\)$/i,'$2').trim():null;
   }
-  $('card-hdr').textContent=(headerText||'KPI Metric').toUpperCase();
+  $('card-hdr').textContent=(hdrTxt||'KPI Metric').toUpperCase();
 
-  /* ══════════════════════════════════════════
-     DISPLAY AMOUNT — SUM all rows, fully independent of date.
-     Every row contributes its nativeValue to the sum.
-     This is correct whether the worksheet has 1 row or 100 rows.
-  ══════════════════════════════════════════ */
+  /* display amount — SUM all rows independently of date */
   var displayVal=null;
   if(displayKey){
-    var _sum=0, _cnt=0;
+    var _s=0,_c=0;
     rows.forEach(function(row){
       if(!row[displayKey]) return;
       var dv=row[displayKey];
-      var raw=dv.nativeValue!==undefined&&dv.nativeValue!==null
-              ? dv.nativeValue : dv.value;
+      var raw=dv.nativeValue!==undefined&&dv.nativeValue!==null?dv.nativeValue:dv.value;
       var n=parseFloat(raw);
-      if(!isNaN(n)){ _sum+=n; _cnt++; }
+      if(!isNaN(n)){_s+=n;_c++;}
     });
-    console.log('[KPI] display key:',displayKey,'rows summed:',_cnt,'total:',_sum);
-    if(_cnt>0) displayVal=_sum;
+    if(_c>0) displayVal=_s;
   }
 
-  /* ══════════════════════════════════════════
-     TREND SERIES — from trendKey + dateKey
-     Collects all rows into a time series.
-  ══════════════════════════════════════════ */
-  var tKey=trendKey||displayKey; /* fallback: use display as trend if no trend field */
+  /* trend series */
+  var tKey=trendKey||displayKey;
   var pts=[];
   rows.forEach(function(row){
-    var val=dvNum(row,tKey);
-    if(val===null) return;
-    var lbl=dateKey?formatLabel(row[dateKey]):'';
+    var val=dvNum(row,tKey);if(val===null) return;
+    var lbl=dateKey?fmtLabel(row[dateKey]):'';
     var dateObj=dateKey?parseDate(row[dateKey]):null;
     pts.push({val:val,lbl:lbl,date:dateObj});
   });
-
-  /* sort chronologically */
-  if(pts.length&&pts[0].date){
-    pts.sort(function(a,b){return (a.date?a.date.getTime():0)-(b.date?b.date.getTime():0);});
-  }
-  /* deduplicate by label */
+  if(pts.length&&pts[0].date)
+    pts.sort(function(a,b){return(a.date?a.date.getTime():0)-(b.date?b.date.getTime():0);});
   var seen={},unique=[];
   pts.forEach(function(p){if(!seen[p.lbl]){seen[p.lbl]=true;unique.push(p);}});
   pts=unique;
 
   if(!pts.length&&displayVal===null) return;
 
-  var trendVals=pts.map(function(p){return p.val;});
+  var tVals=pts.map(function(p){return p.val;});
   var labels=pts.map(function(p){return p.lbl;});
 
-  /* ══════════════════════════════════════════
-     HERO AMOUNT
-     If displayKey is set → use displayVal
-     Otherwise → use last point in trend series
-  ══════════════════════════════════════════ */
-  /* displayVal===null means not mapped; displayVal===0 is valid */
-  var heroVal = (displayVal!==null) ? displayVal
-              : trendVals.length    ? trendVals[trendVals.length-1]
-              : null;
-  if(heroVal===null) return; /* truly no data */
-
+  /* hero */
+  var heroVal=(displayVal!==null)?displayVal:tVals.length?tVals[tVals.length-1]:null;
+  if(heroVal===null) return;
   $('amount').textContent=fmt(heroVal);
 
-  /* ══════════════════════════════════════════
-     AVERAGE + VARIANCE (from trend series)
-  ══════════════════════════════════════════ */
-  if(trendVals.length){
-    var avg=trendVals.reduce(function(s,v){return s+v;},0)/trendVals.length;
+  /* avg + variance */
+  if(tVals.length){
+    var avg=tVals.reduce(function(s,v){return s+v;},0)/tVals.length;
     $('avg-lbl').textContent='Avg '+fmt(avg);
-
-    /* variance = hero vs average of trend */
-    var deltaVsAvg=avg!==0?((heroVal-avg)/Math.abs(avg))*100:null;
+    var delta=avg!==0?((heroVal-avg)/Math.abs(avg))*100:null;
     var chip=$('delta-chip');
-    if(deltaVsAvg!==null){
-      var up=deltaVsAvg>=0;
+    if(delta!==null){
+      var up=delta>=0;
       chip.className=up?'up':'dn';
-      chip.textContent=(up?'▲ ':' ▼ ')+(deltaVsAvg>=0?'+':'')+Math.abs(deltaVsAvg).toFixed(1)+'% vs avg';
-    } else {
-      chip.className='neu';chip.textContent='—';
-    }
+      chip.textContent=(up?'▲ ':' ▼ ')+(delta>=0?'+':'')+Math.abs(delta).toFixed(1)+'% vs avg';
+    } else {chip.className='neu';chip.textContent='—';}
   } else {
-    /* no trend series — show blank meta */
     $('avg-lbl').textContent='';
     $('delta-chip').className='neu';$('delta-chip').textContent='';
   }
 
-  /* ── chart (uses trend series) ── */
-  if(trendVals.length){
-    buildChart(labels,trendVals);
-
-    /* x-axis labels */
-    var xlEl=$('x-labels');
-    xlEl.innerHTML='';
-    var s1=document.createElement('span');s1.textContent=labels[0]||'';xlEl.appendChild(s1);
-    if(labels.length>1){
-      var s2=document.createElement('span');s2.textContent=labels[labels.length-1]||'';xlEl.appendChild(s2);
-    }
-
-    /* chart tooltip — show hero value */
+  /* chart */
+  if(tVals.length){
+    buildChart(labels,tVals);
+    var xl=$('x-labels');xl.innerHTML='';
+    var s1=document.createElement('span');s1.textContent=labels[0]||'';xl.appendChild(s1);
+    if(labels.length>1){var s2=document.createElement('span');s2.textContent=labels[labels.length-1]||'';xl.appendChild(s2);}
     $('chart-tooltip').textContent=fmt(heroVal);
   }
 
-  applyScale(appEl.offsetWidth||280);
+  applyScale(appEl.offsetWidth||220);
 }
 
-/* ════════════════════════════════
-   DATA READER — confirmed working
-════════════════════════════════ */
+/* ════════════════ DATA READER ════════════════ */
 async function getData(ws){
   var rows=[],rdr=await ws.getSummaryDataReaderAsync(undefined,{ignoreSelection:true});
   for(var i=0;i<rdr.pageCount;i++){
     var pg=await rdr.getPageAsync(i);
     pg.data.forEach(function(r){
-      var row={};
-      pg.columns.forEach(function(c,idx){row[c.fieldName]=r[idx];});
-      rows.push(row);
+      var row={};pg.columns.forEach(function(c,idx){row[c.fieldName]=r[idx];});rows.push(row);
     });
   }
-  await rdr.releaseAsync();
-  return rows;
+  await rdr.releaseAsync();return rows;
 }
-
 async function getEnc(ws){
   var spec=await ws.getVisualSpecificationAsync(),map={};
   if(spec.activeMarksSpecificationIndex<0) return map;
@@ -641,15 +509,11 @@ async function getEnc(ws){
   return map;
 }
 
-/* ════════════════════════════════
-   INIT — confirmed working pattern
-════════════════════════════════ */
+/* ════════════════ INIT ════════════════ */
 window.onload=tableau.extensions.initializeAsync().then(function(){
   var ws=tableau.extensions.worksheetContent.worksheet;
   var update=async function(){
-    var data=await getData(ws);
-    var enc =await getEnc(ws);
-    render(data,enc);
+    var data=await getData(ws);var enc=await getEnc(ws);render(data,enc);
   };
   ws.addEventListener(tableau.TableauEventType.SummaryDataChanged,update);
   update();
